@@ -1,0 +1,19 @@
+{
+    "python.linting.enabled": true,
+    "python.linting.pylintEnabled": true,
+    "python.linting.pylintArgs": [
+ 
+        "--disable=W0611",
+        "--disable=C0301",
+        "--disable=W0107",
+    ],
+    "python.linting.mypyEnabled": true,
+    "python.linting.mypyCategorySeverity.error":"Warning",
+    "python.linting.mypyArgs": [
+        "--ignore-missing-imports",
+        "--follow-imports=silent",
+        "--show-column-numbers",
+        "--disallow-untyped-defs",
+        "--disallow-untyped-calls"
+    ]
+}
