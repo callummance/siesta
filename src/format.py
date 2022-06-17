@@ -150,3 +150,36 @@ class NestedBlockField(Field):
         else:
             raise ValueError(
                 "Size specification for a NestedBlockField must be an int or a string (name of variable)")
+
+
+class StructField(Field):
+    """StructField represents a struct-like block of data. It will contain a list of fields and may or may not have a set size."""
+
+    start: Optional[int]
+    length: Optional[int]
+    fields: list[Field]
+    preprocess: PreprocessorFunc
+    name: Optional[str]
+
+    def __init__(self, start: Optional[int], length: Optional[int], name: Optional[str], fields: list[Field], func: PreprocessorFunc = None):
+        self.start = start
+        self.length = length
+        self.name = name
+        self.preprocess = func
+        self.fields = fields
+
+    def get_name(self) -> str | None:
+        return self.name
+
+    def get_preprocessor(self) -> PreprocessorFunc:
+        return self.preprocess
+
+    def get_start(self) -> int | None:
+        return self.start
+
+    def get_type(self) -> str:
+        return "struct"
+
+
+class ArrayField(Field):
+    pass

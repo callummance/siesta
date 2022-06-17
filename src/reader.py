@@ -4,7 +4,7 @@ import copy
 from dataclasses import dataclass
 
 from .field_data import FieldData
-from .format import Field, NestedBlockField, UnknownField
+from .format import Field, NestedBlockField, StructField, UnknownField
 from .binary import Binary, BinaryBlock
 
 
@@ -30,15 +30,15 @@ class Reader:
     def __should_fill_blanks(self) -> bool:
         return self.opts.include_gaps
 
-    def __get_next_field(self, queue: list[Field], loc: int, binary_size: int) -> Field | None:
+    def __get_next_field(self, queue: list[Field], loc: int, binary_size: Optional[int]) -> Field | None:
         # If we are already at the end of the binary, return none
-        if loc >= binary_size:
+        if binary_size is not None and loc >= binary_size:
             return None
 
         # If there are no more fields left in the queue, just return a single unknown field covering the
         # remainder of the binary, or None depending on options
         if len(queue) == 0:
-            if self.__should_fill_blanks():
+            if binary_size is not None and self.__should_fill_blanks():
                 return UnknownField(binary_size - loc, start=loc)
             else:
                 return None
@@ -66,20 +66,31 @@ class Reader:
         """read_binary applies the fields definition to the provided binary, returning a list of retrieved data"""
 
         cur_loc: int = 0
-        queued_fields: list[Field] = copy.deepcopy(self.fields)
-        bin_size: int = binary.get_size()
+        fields: list[Field] = copy.deepcopy(self.fields)
+        struct = StructField(0, binary.get_size(), None, fields)
+
+        (_, res) = self.__consume_struct(struct, binary, cur_loc)
+
+        return res.val
+
+    def __consume_struct(self, fields: StructField, binary: Binary, loc: int) -> tuple[int, FieldData]:
+        """__consume_struct reads struct-like data from the binary. A max length may optionally be specified"""
+
+        cur_loc = loc
+        queued_fields: list[Field] = copy.deepcopy(fields.fields)
         completed_fields: list[FieldData] = []
 
         while True:
             next_field: Field | None = self.__get_next_field(
-                queued_fields, cur_loc, bin_size)
+                queued_fields, cur_loc, fields.length)
             if next_field is None:
                 break
 
             cur_loc, data = self.__consume_field(next_field, binary, cur_loc)
             completed_fields.append(data)
 
-        return completed_fields
+        res = FieldData(fields.get_label(loc), "struct", loc, completed_fields)
+        return (cur_loc, res)
 
     def __consume_field(self, field: Field, binary: Binary, cur_loc: int) -> tuple[int, FieldData]:
         start_override = field.get_start()
