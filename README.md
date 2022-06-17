@@ -30,3 +30,4 @@ The above is the start of an attempt to read an FFXIV MACRO.dat file, extracting
 - [ ] Literals
 - [ ] File diffing
 - [ ] File monitoring
+- [ ] Annotation by offset
